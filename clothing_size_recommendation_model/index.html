@@ -1,2 +1,948 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Your Size — SizeIQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg:         #0b0b0f;
+  --surface:    #131318;
+  --surface2:   #1a1a22;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.13);
+  --text:       #f0ede8;
+  --muted:      #7a7885;
+  --accent:     #e8c547;
+  --accent-dim: rgba(232,197,71,0.12);
+  --green:      #4ade80;
+  --green-dim:  rgba(74,222,128,0.1);
+  --orange:     #fb923c;
+  --orange-dim: rgba(251,146,60,0.1);
+  --red:        #f87171;
+  --red-dim:    rgba(248,113,113,0.1);
+  --radius:     12px;
+  --radius-sm:  6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-x: hidden;
+}
+
+/* Ambient glow background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(232,197,71,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════
+   SHELL
+═══════════════════════════════════════ */
+.shell {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+  animation: rise 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes rise {
+  from { opacity:0; transform: translateY(24px) scale(0.98); }
+  to   { opacity:1; transform: none; }
+}
+
+/* ═══════════════════════════════════════
+   PRODUCT HEADER
+═══════════════════════════════════════ */
+.product-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.product-thumb {
+  width: 48px; height: 48px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2a2a35, #1e1e28);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+
+.product-meta { flex: 1; min-width: 0; }
+
+.product-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem; font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.product-brand {
+  font-size: 0.7rem; color: var(--muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-top: 0.1rem;
+}
+
+.product-sizes {
+  display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem;
+}
+
+.size-chip {
+  font-size: 0.65rem; padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border2);
+  border-radius: 4px; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+  font-weight: 500; letter-spacing: 0.05em;
+}
+.size-chip:hover { border-color: var(--accent); color: var(--accent); }
+.size-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════
+   PROGRESS
+═══════════════════════════════════════ */
+.progress-bar-wrap {
+  padding: 0 1.75rem;
+  padding-top: 1.5rem;
+}
+
+.step-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.step-labels span.active { color: var(--accent); }
+
+.progress-track {
+  height: 2px; background: var(--border2); border-radius: 2px;
+}
+
+.progress-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  width: 33%;
+}
+
+/* ═══════════════════════════════════════
+   STEPS
+═══════════════════════════════════════ */
+.steps-container {
+  padding: 1.5rem 1.75rem 1.75rem;
+  position: relative;
+  min-height: 320px;
+}
+
+.step {
+  display: none;
+  animation: stepIn 0.35s cubic-bezier(0.4,0,0.2,1) both;
+}
+.step.active { display: block; }
+
+@keyframes stepIn {
+  from { opacity:0; transform: translateX(20px); }
+  to   { opacity:1; transform: none; }
+}
+
+.step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem; font-weight: 400;
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+
+.step-sub {
+  font-size: 0.78rem; color: var(--muted);
+  margin-bottom: 1.5rem; line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   INPUT GROUPS
+═══════════════════════════════════════ */
+.input-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.75rem; margin-bottom: 0.75rem;
+}
+
+.input-row.triple {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.field-wrap { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.field-label {
+  font-size: 0.65rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; justify-content: space-between;
+}
+
+.field-unit { color: var(--border2); font-weight: 300; }
+
+.field-input {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem; font-weight: 500;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.field-input::placeholder { color: #3a3a48; }
+
+.field-input.error { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-dim); }
+
+select.field-input {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7885' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+/* ═══════════════════════════════════════
+   BODY SHAPE PICKER
+═══════════════════════════════════════ */
+.shape-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem; margin-bottom: 0.75rem;
+}
+
+.shape-btn {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.35rem;
+  padding: 0.6rem 0.3rem;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  color: var(--muted);
+}
+
+.shape-btn:hover { border-color: var(--border2); background: var(--surface2); color: var(--text); }
+.shape-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+
+.shape-icon { font-size: 1.4rem; line-height: 1; }
+.shape-name { font-size: 0.55rem; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; }
+
+/* ═══════════════════════════════════════
+   CATEGORY PICKER
+═══════════════════════════════════════ */
+.cat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem; margin-bottom: 0.75rem;
+}
+
+.cat-btn {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.4rem;
+  padding: 0.85rem 0.5rem;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  color: var(--muted); font-size: 0.7rem;
+  text-align: center; line-height: 1.3;
+}
+.cat-btn:hover { color: var(--text); }
+.cat-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+.cat-icon { font-size: 1.5rem; }
+
+/* ═══════════════════════════════════════
+   RESULT
+═══════════════════════════════════════ */
+.result-hero {
+  text-align: center;
+  padding: 1rem 0 1.25rem;
+}
+
+.result-label {
+  font-size: 0.65rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.result-verdict {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem; font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.4rem;
+}
+
+.result-verdict.fit       { color: var(--green); }
+.result-verdict.too_small { color: var(--orange); }
+.result-verdict.too_large { color: var(--red);   }
+
+.result-advice {
+  font-size: 0.8rem; color: var(--muted);
+  line-height: 1.6; max-width: 340px; margin: 0 auto;
+}
+
+/* Recommended size badge */
+.rec-size-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.75rem; margin: 1rem 0;
+}
+
+.rec-size-label { font-size: 0.7rem; color: var(--muted); }
+
+.rec-size-badge {
+  font-size: 1rem; font-weight: 600;
+  padding: 0.4rem 1.2rem;
+  border-radius: 6px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+/* Probability bars */
+.prob-rows { margin: 1rem 0; }
+
+.prob-row {
+  display: grid; grid-template-columns: 80px 1fr 38px;
+  align-items: center; gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.prob-name { font-size: 0.68rem; color: var(--muted); }
+
+.prob-track {
+  height: 5px; background: var(--border2);
+  border-radius: 3px; overflow: hidden;
+}
+
+.prob-bar {
+  height: 100%; border-radius: 3px;
+  width: 0; transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+.prob-bar.fit       { background: var(--green);  }
+.prob-bar.too_small { background: var(--orange); }
+.prob-bar.too_large { background: var(--red);    }
+
+.prob-pct { font-size: 0.65rem; color: var(--muted); text-align: right; }
+
+/* Confidence pill */
+.conf-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.68rem; padding: 0.25rem 0.7rem;
+  border-radius: 20px; margin: 0 auto 1rem;
+}
+.conf-pill.high   { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(74,222,128,0.2); }
+.conf-pill.medium { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
+.conf-pill.low    { background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border2); }
+
+.conf-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Size row highlight */
+.sizes-result {
+  display: flex; gap: 0.4rem; justify-content: center;
+  flex-wrap: wrap; margin: 0.75rem 0;
+}
+
+.size-result-chip {
+  font-size: 0.7rem; font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  transition: all 0.3s;
+}
+
+.size-result-chip.recommended {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* ═══════════════════════════════════════
+   SHOULDER NOTE
+═══════════════════════════════════════ */
+.shoulder-note {
+  font-size: 0.68rem; color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════ */
+.btn-row {
+  display: flex; gap: 0.75rem; margin-top: 1.5rem;
+}
+
+.btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem; font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  border: none; cursor: pointer;
+  transition: all 0.18s;
+  flex: 1;
+}
+
+.btn-primary {
+  background: var(--accent); color: #0b0b0f;
+  font-weight: 600;
+}
+.btn-primary:hover { background: #f0d060; transform: translateY(-1px); }
+.btn-primary:active { transform: none; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+
+.btn-primary .spinner {
+  display: none; width: 14px; height: 14px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: #0b0b0f;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto;
+}
+.btn-primary.loading .btn-text { display: none; }
+.btn-primary.loading .spinner  { display: block; }
+
+/* Reset button */
+.btn-reset {
+  width: 100%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem;
+  cursor: pointer; margin-top: 0.75rem;
+  transition: all 0.15s;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-reset:hover { color: var(--text); border-color: var(--border2); }
+
+/* ═══════════════════════════════════════
+   ERROR
+═══════════════════════════════════════ */
+.error-msg {
+  font-size: 0.72rem; color: var(--red);
+  background: var(--red-dim);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  margin-top: 0.75rem;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+.widget-footer {
+  padding: 0.85rem 1.75rem;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface2);
+}
+
+.powered-by {
+  font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.powered-by strong { color: var(--accent); }
+
+.api-status {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.6rem; color: var(--muted);
+}
+.api-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted); transition: background 0.3s;
+}
+.api-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.api-dot.dead { background: var(--red); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Product Header -->
+  <div class="product-header">
+    <div class="product-thumb" id="productThumb">👗</div>
+    <div class="product-meta">
+      <div class="product-name" id="productName">Silhouette Wrap Dress</div>
+      <div class="product-brand" id="productBrand">Example Brand · AI Size Guide</div>
+      <div class="product-sizes" id="productSizes">
+        <span class="size-chip" onclick="selectSize(this,'XS')">XS</span>
+        <span class="size-chip" onclick="selectSize(this,'S')">S</span>
+        <span class="size-chip active" onclick="selectSize(this,'M')">M</span>
+        <span class="size-chip" onclick="selectSize(this,'L')">L</span>
+        <span class="size-chip" onclick="selectSize(this,'XL')">XL</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap">
+    <div class="step-labels">
+      <span id="lbl1" class="active">Body</span>
+      <span id="lbl2">Fit</span>
+      <span id="lbl3">Result</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps-container">
+
+    <!-- ── STEP 1: Body Measurements ── -->
+    <div class="step active" id="step1">
+      <div class="step-title">Your measurements</div>
+      <div class="step-sub">Enter your body measurements in centimetres for the most accurate recommendation.</div>
+
+      <div class="input-row">
+        <div class="field-wrap">
+          <div class="field-label">Height <span class="field-unit">cm</span></div>
+          <input class="field-input" id="height" type="number" placeholder="165" min="120" max="220">
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Weight <span class="field-unit">kg</span></div>
+          <input class="field-input" id="weight" type="number" placeholder="62" min="30" max="200">
+        </div>
+      </div>
+
+      <div class="input-row triple">
+        <div class="field-wrap">
+          <div class="field-label">Bust <span class="field-unit">cm</span></div>
+          <input class="field-input" id="bust" type="number" placeholder="90" min="60" max="160">
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Waist <span class="field-unit">cm</span></div>
+          <input class="field-input" id="waist" type="number" placeholder="72" min="40" max="150">
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Hips <span class="field-unit">cm</span></div>
+          <input class="field-input" id="hips" type="number" placeholder="96" min="60" max="170">
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="field-wrap">
+          <div class="field-label">Age <span class="field-unit">years</span></div>
+          <input class="field-input" id="age" type="number" placeholder="28" min="13" max="100">
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Shoulder <span class="field-unit">cm · optional</span></div>
+          <input class="field-input" id="shoulder_width" type="number" placeholder="38" min="28" max="60">
+        </div>
+      </div>
+
+      <div class="error-msg" id="err1"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goStep(2)">
+          <span class="btn-text">Continue →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Fit Preferences ── -->
+    <div class="step" id="step2">
+      <div class="step-title">Garment & body type</div>
+      <div class="step-sub">Help us fine-tune your recommendation.</div>
+
+      <div class="field-label" style="margin-bottom:0.5rem">Garment category</div>
+      <div class="cat-grid">
+        <div class="cat-btn active" onclick="selectCat(this,'dress')" data-val="dress">
+          <span class="cat-icon">👗</span>Dress
+        </div>
+        <div class="cat-btn" onclick="selectCat(this,'top')" data-val="top">
+          <span class="cat-icon">👚</span>Top / Blouse
+        </div>
+        <div class="cat-btn" onclick="selectCat(this,'bottom')" data-val="bottom">
+          <span class="cat-icon">👖</span>Bottoms
+        </div>
+        <div class="cat-btn" onclick="selectCat(this,'jacket')" data-val="jacket">
+          <span class="cat-icon">🧥</span>Jacket / Coat
+        </div>
+        <div class="cat-btn" onclick="selectCat(this,'jumpsuit')" data-val="jumpsuit">
+          <span class="cat-icon">🩱</span>Jumpsuit
+        </div>
+        <div class="cat-btn" onclick="selectCat(this,'other')" data-val="other">
+          <span class="cat-icon">✨</span>Other
+        </div>
+      </div>
+
+      <div class="field-label" style="margin:1rem 0 0.5rem">Body shape</div>
+      <div class="shape-grid">
+        <div class="shape-btn" onclick="selectShape(this,'hourglass')">
+          <span class="shape-icon">⌛</span>
+          <span class="shape-name">Hour glass</span>
+        </div>
+        <div class="shape-btn" onclick="selectShape(this,'pear')">
+          <span class="shape-icon">🍐</span>
+          <span class="shape-name">Pear</span>
+        </div>
+        <div class="shape-btn" onclick="selectShape(this,'apple')">
+          <span class="shape-icon">🍎</span>
+          <span class="shape-name">Apple</span>
+        </div>
+        <div class="shape-btn" onclick="selectShape(this,'rectangle')">
+          <span class="shape-icon">▭</span>
+          <span class="shape-name">Rectangle</span>
+        </div>
+        <div class="shape-btn" onclick="selectShape(this,'inverted_triangle')">
+          <span class="shape-icon">🔻</span>
+          <span class="shape-name">Inverted</span>
+        </div>
+      </div>
+
+      <div class="error-msg" id="err2"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" id="predictBtn" onclick="runPredict()">
+          <span class="btn-text">Get My Size</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Result ── -->
+    <div class="step" id="step3">
+      <div class="result-hero">
+
+        <div class="result-label">AI Recommendation</div>
+
+        <div class="result-verdict" id="resultVerdict">—</div>
+
+        <div style="display:flex;justify-content:center;margin:0.5rem 0">
+          <div class="conf-pill" id="confPill">
+            <div class="conf-dot"></div>
+            <span id="confText">—</span>
+          </div>
+        </div>
+
+        <div class="rec-size-row" id="recSizeRow" style="display:none">
+          <span class="rec-size-label">Recommended size</span>
+          <span class="rec-size-badge" id="recSizeBadge">M</span>
+        </div>
+
+        <div class="sizes-result" id="sizeResultRow"></div>
+
+        <div class="result-advice" id="resultAdvice"></div>
+      </div>
+
+      <div class="prob-rows" id="probRows"></div>
+
+      <div class="shoulder-note" id="shoulderNote" style="display:none"></div>
+
+      <button class="btn-reset" onclick="resetAll()">↺ Check a different size or garment</button>
+    </div>
+
+  </div><!-- /steps-container -->
+
+  <!-- Footer -->
+  <div class="widget-footer">
+    <div class="powered-by">Powered by <strong>SizeIQ</strong> · XGBoost ML Model</div>
+    <div class="api-status">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiLabel">connecting…</span>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+const API = 'https://sizeiq-api.onrender.com';
+
+let selectedCategory = 'dress';
+let selectedShape    = null;
+let selectedSize     = 'M';
+
+// ── Category & shape emojis for product header ──────────────────────────────
+const CAT_EMOJI = {
+  dress:'👗', top:'👚', bottom:'👖',
+  jacket:'🧥', jumpsuit:'🩱', other:'✨'
+};
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function goStep(n) {
+  if (n === 2) {
+    const ok = validateStep1();
+    if (!ok) return;
+  }
+
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step${n}`).classList.add('active');
+
+  // Progress bar
+  const pct = { 1: 33, 2: 66, 3: 100 }[n];
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Labels
+  ['lbl1','lbl2','lbl3'].forEach((id, i) => {
+    document.getElementById(id).className = (i + 1 <= n) ? 'active' : '';
+  });
+}
+
+// ── Validate step 1 ───────────────────────────────────────────────────────────
+function validateStep1() {
+  const err = document.getElementById('err1');
+  const required = ['height','weight','bust','waist','hips','age'];
+  const missing = required.filter(f => {
+    const v = parseFloat(document.getElementById(f).value);
+    return isNaN(v);
+  });
+
+  if (missing.length) {
+    err.textContent = `Please fill in: ${missing.join(', ')}`;
+    err.className = 'error-msg visible';
+    missing.forEach(f => document.getElementById(f).classList.add('error'));
+    return false;
+  }
+
+  // Waist < hips check
+  const waist = parseFloat(document.getElementById('waist').value);
+  const hips  = parseFloat(document.getElementById('hips').value);
+  if (waist >= hips) {
+    err.textContent = 'Waist measurement should be less than hips.';
+    err.className = 'error-msg visible';
+    return false;
+  }
+
+  err.className = 'error-msg';
+  required.forEach(f => document.getElementById(f).classList.remove('error'));
+  return true;
+}
+
+// ── Selections ─────────────────────────────────────────────────────────────
+function selectCat(el, val) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedCategory = val;
+  document.getElementById('productThumb').textContent = CAT_EMOJI[val] || '✨';
+}
+
+function selectShape(el, val) {
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedShape = val;
+}
+
+function selectSize(el, val) {
+  document.querySelectorAll('.size-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedSize = val;
+}
+
+// ── Predict ───────────────────────────────────────────────────────────────────
+async function runPredict() {
+  const btn = document.getElementById('predictBtn');
+  const err = document.getElementById('err2');
+  err.className = 'error-msg';
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const payload = {
+    height   : parseFloat(document.getElementById('height').value),
+    weight   : parseFloat(document.getElementById('weight').value),
+    bust     : parseFloat(document.getElementById('bust').value),
+    waist    : parseFloat(document.getElementById('waist').value),
+    hips     : parseFloat(document.getElementById('hips').value),
+    age      : parseFloat(document.getElementById('age').value),
+    category : selectedCategory,
+    body_type: selectedShape || 'unknown',
+  };
+
+  const sw = parseFloat(document.getElementById('shoulder_width').value);
+  if (!isNaN(sw)) payload.shoulder_width = sw;
+
+  try {
+    const r = await fetch(`${API}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!r.ok) {
+      const e = await r.json();
+      throw new Error(e.detail || `HTTP ${r.status}`);
+    }
+
+    const data = await r.json();
+    renderResult(data);
+    goStep(3);
+
+  } catch(e) {
+    err.textContent = `Error: ${e.message}`;
+    err.className = 'error-msg visible';
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// ── Render result ─────────────────────────────────────────────────────────────
+function renderResult(data) {
+  const labelMap = {
+    fit       : 'Fits Well',
+    too_small : 'Too Small',
+    too_large : 'Too Large',
+  };
+
+  const adviceMap = {
+    fit       : `Great news — this ${selectedCategory} should fit you well based on your measurements.`,
+    too_small : `This ${selectedCategory} may be too small. We suggest sizing up from your selected size.`,
+    too_large : `This ${selectedCategory} may be too large. We suggest sizing down from your selected size.`,
+  };
+
+  // Verdict
+  const verdict = document.getElementById('resultVerdict');
+  verdict.textContent  = labelMap[data.recommendation];
+  verdict.className    = `result-verdict ${data.recommendation}`;
+
+  // Confidence pill
+  const pill = document.getElementById('confPill');
+  pill.className = `conf-pill ${data.confidence_level}`;
+  document.getElementById('confText').textContent =
+    `${Math.round(data.confidence * 100)}% confidence · ${data.confidence_level}`;
+
+  // Advice
+  document.getElementById('resultAdvice').textContent = adviceMap[data.recommendation];
+
+  // Recommended size badge
+  const sizes = ['XS','S','M','L','XL'];
+  let recSize = selectedSize;
+  if (data.recommendation === 'too_small') {
+    const idx = sizes.indexOf(selectedSize);
+    recSize = idx < sizes.length - 1 ? sizes[idx + 1] : selectedSize;
+  } else if (data.recommendation === 'too_large') {
+    const idx = sizes.indexOf(selectedSize);
+    recSize = idx > 0 ? sizes[idx - 1] : selectedSize;
+  }
+
+  document.getElementById('recSizeBadge').textContent = recSize;
+  document.getElementById('recSizeRow').style.display = 'flex';
+
+  // Size chips highlight
+  const sizeRow = document.getElementById('sizeResultRow');
+  sizeRow.innerHTML = sizes.map(s => `
+    <div class="size-result-chip ${s === recSize ? 'recommended' : ''}">${s}</div>
+  `).join('');
+
+  // Probability bars
+  const probRows = document.getElementById('probRows');
+  const probs = data.probabilities;
+  const nameMap = { too_small:'Too Small', fit:'Fits Well', too_large:'Too Large' };
+  probRows.innerHTML = Object.entries(probs).map(([cls, val]) => `
+    <div class="prob-row">
+      <span class="prob-name">${nameMap[cls]}</span>
+      <div class="prob-track">
+        <div class="prob-bar ${cls}" id="pb_${cls}"></div>
+      </div>
+      <span class="prob-pct">${Math.round(val*100)}%</span>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    Object.entries(probs).forEach(([cls, val]) => {
+      const bar = document.getElementById(`pb_${cls}`);
+      if (bar) bar.style.width = `${Math.round(val*100)}%`;
+    });
+  }, 80);
+
+  // Shoulder note
+  const shNote = document.getElementById('shoulderNote');
+  if (data.shoulder_estimated) {
+    shNote.style.display = 'block';
+    shNote.textContent = `ℹ Shoulder width was estimated at ${data.shoulder_used} cm from your bust measurement. For higher accuracy, measure shoulder width and re-run.`;
+  } else {
+    shNote.style.display = 'none';
+  }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetAll() {
+  ['height','weight','bust','waist','hips','age','shoulder_width'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('error');
+  });
+  document.getElementById('err1').className = 'error-msg';
+  document.getElementById('err2').className = 'error-msg';
+  selectedCategory = 'dress';
+  selectedShape = null;
+  document.querySelectorAll('.cat-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('productThumb').textContent = '👗';
+  goStep(1);
+}
+
+// ── API health ─────────────────────────────────────────────────────────────────
+async function checkApi() {
+  const dot   = document.getElementById('apiDot');
+  const label = document.getElementById('apiLabel');
+  try {
+    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      dot.className = 'api-dot live';
+      label.textContent = 'API live';
+    } else throw new Error();
+  } catch {
+    dot.className = 'api-dot dead';
+    label.textContent = 'API offline';
+  }
+}
+
+checkApi();
+setInterval(checkApi, 20000);
+</script>
+</body>
+</html>
