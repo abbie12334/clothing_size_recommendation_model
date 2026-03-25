@@ -157,5 +157,6 @@ def model_info():
             "best_round":artifacts.best_round,"xgboost_version":xgb.__version__}
 
 if __name__=="__main__":
-    import uvicorn
-    uvicorn.run("step8_api:app",host="0.0.0.0",port=8000,reload=True)
+    import uvicorn, os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("step8_api:app", host="0.0.0.0", port=port)
